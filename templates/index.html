@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Dashboard -->
+<section id="dashboard" class="mb-8">
+    {% include "partials/dashboard.html" %}
+</section>
+
+<!-- Add New Application -->
+<section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+    <h2 class="text-lg font-semibold mb-4 text-slate-700">Add New Application</h2>
+    <form
+        hx-post="/applications"
+        hx-target="#app-list"
+        hx-swap="innerHTML"
+        hx-indicator="#add-spinner"
+        class="space-y-4"
+        hx-on::after-request="htmx.ajax('GET', '/dashboard', '#dashboard');
+            if(event.detail.successful) this.reset();
+            document.getElementById('date_applied').valueAsDate = new Date();"
+    >
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="md:col-span-2">
+                <label for="linkedin_url" class="block text-sm font-medium text-slate-600 mb-1">LinkedIn Job URL</label>
+                <input
+                    type="url"
+                    id="linkedin_url"
+                    name="linkedin_url"
+                    required
+                    placeholder="https://www.linkedin.com/jobs/view/..."
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-400"
+                    aria-describedby="url-help"
+                    hx-get="/check-duplicate"
+                    hx-trigger="blur"
+                    hx-target="#dup-check"
+                    hx-swap="innerHTML"
+                    hx-params="none"
+                    hx-vals='js:{"url": document.getElementById("linkedin_url").value}'
+                />
+                <div id="dup-check"></div>
+                <p id="url-help" class="text-xs text-slate-400 mt-1">Paste a LinkedIn job link &mdash; we'll try to auto-fill details.</p>
+            </div>
+            <div>
+                <label for="date_applied" class="block text-sm font-medium text-slate-600 mb-1">Date Applied</label>
+                <input
+                    type="date"
+                    id="date_applied"
+                    name="date_applied"
+                    required
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <script>document.getElementById('date_applied').valueAsDate = new Date();</script>
+            </div>
+        </div>
+
+        <details class="text-sm">
+            <summary class="cursor-pointer text-indigo-600 font-medium hover:text-indigo-800 transition-colors">Manual details (optional &mdash; override auto-fill)</summary>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                <div>
+                    <label for="job_title" class="block text-sm font-medium text-slate-600 mb-1">Job Title</label>
+                    <input type="text" id="job_title" name="job_title" placeholder="Auto-detected"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400" />
+                </div>
+                <div>
+                    <label for="company" class="block text-sm font-medium text-slate-600 mb-1">Company</label>
+                    <input type="text" id="company" name="company" placeholder="Auto-detected"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400" />
+                </div>
+                <div>
+                    <label for="location" class="block text-sm font-medium text-slate-600 mb-1">Location</label>
+                    <input type="text" id="location" name="location" placeholder="Auto-detected"
+                        class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400" />
+                </div>
+            </div>
+            <div class="mt-3">
+                <label for="notes" class="block text-sm font-medium text-slate-600 mb-1">Notes</label>
+                <textarea id="notes" name="notes" rows="2" placeholder="Anything you want to remember..."
+                    class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 placeholder-slate-400"></textarea>
+            </div>
+        </details>
+
+        <div class="flex items-center gap-3">
+            <button type="submit"
+                class="bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold px-6 py-2 rounded-lg transition-colors text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Save Application
+            </button>
+            <span id="add-spinner" class="htmx-indicator text-indigo-500 text-sm">Scraping & saving...</span>
+        </div>
+    </form>
+</section>
+
+<!-- Search, Filter & Sort bar -->
+<section class="flex flex-wrap items-center gap-4 mb-6">
+    <div class="relative flex-1 min-w-[200px] max-w-sm">
+        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input
+            type="text"
+            id="search-input"
+            name="search"
+            placeholder="Search by company or title... ( / )"
+            hx-get="/applications/list"
+            hx-trigger="keyup changed delay:300ms"
+            hx-target="#app-list"
+            hx-swap="innerHTML"
+            hx-include="#status-filter, #sort-select"
+            class="w-full border border-slate-300 rounded-lg pl-9 pr-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white placeholder-slate-400"
+            aria-label="Search applications by company or job title"
+        />
+    </div>
+    <div class="flex items-center gap-2">
+        <label for="status-filter" class="text-sm font-medium text-slate-600">Status:</label>
+        <select id="status-filter"
+            hx-get="/applications/list"
+            hx-target="#app-list"
+            hx-swap="innerHTML"
+            hx-include="#search-input, #sort-select"
+            name="status"
+            class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            aria-label="Filter applications by status"
+        >
+            <option value="">All Statuses</option>
+            <option value="Applied">Applied</option>
+            <option value="Interviewing">Interviewing</option>
+            <option value="Offer">Offer</option>
+            <option value="Rejected">Rejected</option>
+            <option value="Withdrawn">Withdrawn</option>
+        </select>
+    </div>
+    <div class="flex items-center gap-2">
+        <label for="sort-select" class="text-sm font-medium text-slate-600">Sort:</label>
+        <select id="sort-select"
+            hx-get="/applications/list"
+            hx-target="#app-list"
+            hx-swap="innerHTML"
+            hx-include="#search-input, #status-filter"
+            name="sort"
+            class="border border-slate-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+            aria-label="Sort applications"
+        >
+            <option value="date">Date Applied</option>
+            <option value="company">Company A–Z</option>
+            <option value="status">Status</option>
+            <option value="starred">Starred First</option>
+        </select>
+    </div>
+</section>
+
+<!-- Application list -->
+<div id="app-list">
+    {% include "partials/app_list.html" %}
+</div>
+
+{% endblock %}

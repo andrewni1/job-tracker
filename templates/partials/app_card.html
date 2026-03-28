@@ -1,0 +1,204 @@
+<!-- Reusable app card — expects: app, target, source, selected_date (optional) -->
+<div class="bg-white rounded-lg shadow-sm border
+            {% if app.starred %}border-amber-300 ring-1 ring-amber-200{% else %}border-slate-200{% endif %}
+            {% if app.days_since is defined and app.days_since >= 21 and app.status == 'Applied' %}border-l-4 border-l-rose-400
+            {% elif app.days_since is defined and app.days_since >= 14 and app.status == 'Applied' %}border-l-4 border-l-amber-400
+            {% endif %}
+            hover:shadow-md transition-all"
+     id="app-{{ app.id }}">
+
+    <!-- Header row (always visible) -->
+    <div class="p-4 cursor-pointer select-none"
+         onclick="document.getElementById('details-{{ app.id }}').classList.toggle('hidden');
+                  this.querySelector('.chevron').classList.toggle('rotate-90');">
+        <div class="flex items-start justify-between gap-4">
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <!-- Star button -->
+                    <button onclick="event.stopPropagation()"
+                        hx-patch="/applications/{{ app.id }}/star?source={{ source }}&d={{ selected_date|default('') }}"
+                        hx-target="{{ target }}" hx-swap="innerHTML"
+                        class="p-0.5 -ml-0.5 transition-colors focus:outline-none"
+                        aria-label="{{ 'Unstar' if app.starred else 'Star' }} {{ app.job_title }}"
+                        title="{{ 'Unstar' if app.starred else 'Star' }}">
+                        {% if app.starred %}
+                        <svg class="w-4 h-4 text-amber-400" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                        {% else %}
+                        <svg class="w-4 h-4 text-slate-300 hover:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>
+                        {% endif %}
+                    </button>
+                    <!-- Chevron + title -->
+                    <span class="flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5 text-slate-400 transition-transform chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                        <span class="text-slate-800 font-semibold text-base">{{ app.job_title }}</span>
+                    </span>
+                    {% set status = app.status %}
+                    {% include "partials/status_badge.html" %}
+                    {% if app.salary %}
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        💰 {{ app.salary }}
+                    </span>
+                    {% endif %}
+                    <!-- Stale indicator -->
+                    {% if app.days_since is defined and app.status == 'Applied' %}
+                        {% if app.days_since >= 21 %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-rose-50 text-rose-600 border border-rose-200"
+                              title="No response in {{ app.days_since }} days">
+                            🚨 {{ app.days_since }}d
+                        </span>
+                        {% elif app.days_since >= 14 %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200"
+                              title="No response in {{ app.days_since }} days">
+                            ⏳ {{ app.days_since }}d
+                        </span>
+                        {% endif %}
+                    {% endif %}
+                </div>
+                <p class="text-sm text-slate-500 mt-0.5 ml-9">
+                    {{ app.company }}
+                    {% if app.location %}&bull; {{ app.location }}{% endif %}
+                    {% if app.employment_type %}
+                    &bull; <span class="text-slate-400">{{ app.employment_type }}</span>
+                    {% endif %}
+                </p>
+            </div>
+            <!-- Action buttons (stop propagation so clicks don’t toggle) -->
+            <div class="flex items-center gap-1.5 shrink-0" onclick="event.stopPropagation()">
+                <select
+                    hx-patch="/applications/{{ app.id }}/status?source={{ source }}&d={{ selected_date|default('') }}"
+                    hx-target="{{ target }}"
+                    hx-swap="innerHTML"
+                    hx-on::after-request="htmx.ajax('GET', '/dashboard', '#dashboard')"
+                    name="status"
+                    class="text-xs border border-slate-300 rounded-md px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    aria-label="Update status for {{ app.job_title }}"
+                >
+                    {% for s in ['Applied', 'Interviewing', 'Offer', 'Rejected', 'Withdrawn'] %}
+                    <option value="{{ s }}" {{ 'selected' if s == app.status else '' }}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+                <button
+                    hx-get="/applications/{{ app.id }}/edit"
+                    hx-target="#app-{{ app.id }}"
+                    hx-swap="outerHTML"
+                    class="text-slate-300 hover:text-indigo-500 text-sm p-1 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                    aria-label="Edit {{ app.job_title }}" title="Edit details"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                </button>
+                <button
+                    hx-post="/applications/{{ app.id }}/rescrape"
+                    hx-target="{{ target }}"
+                    hx-swap="innerHTML"
+                    hx-confirm="Re-scrape this listing? This will overwrite scraped fields."
+                    class="text-slate-300 hover:text-violet-500 text-sm p-1 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-violet-400"
+                    aria-label="Re-scrape {{ app.job_title }}" title="Re-scrape from LinkedIn"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                    </svg>
+                </button>
+                <button
+                    hx-delete="/applications/{{ app.id }}?source={{ source }}&d={{ selected_date|default('') }}"
+                    hx-target="{{ target }}"
+                    hx-swap="innerHTML"
+                    hx-confirm="Delete this application?"
+                    hx-on::after-request="htmx.ajax('GET', '/dashboard', '#dashboard')"
+                    class="text-slate-300 hover:text-rose-500 text-sm p-1 rounded transition-colors focus:outline-none focus:ring-1 focus:ring-rose-400"
+                    aria-label="Delete {{ app.job_title }}" title="Delete"
+                >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expandable detail panel (hidden by default) -->
+    <div id="details-{{ app.id }}" class="hidden border-t border-slate-100">
+        <div class="p-4 pt-3 bg-slate-50/50 rounded-b-lg space-y-3">
+
+            <!-- Meta chips row -->
+            <div class="flex flex-wrap gap-2">
+                {% if app.seniority_level %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-600 border border-slate-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                    {{ app.seniority_level }}
+                </span>
+                {% endif %}
+                {% if app.employment_type %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-600 border border-slate-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    {{ app.employment_type }}
+                </span>
+                {% endif %}
+                {% if app.job_function %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-600 border border-slate-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>
+                    {{ app.job_function }}
+                </span>
+                {% endif %}
+                {% if app.industries %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-slate-100 text-slate-600 border border-slate-200">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    {{ app.industries }}
+                </span>
+                {% endif %}
+                {% if app.salary %}
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">
+                    💰 {{ app.salary }}
+                </span>
+                {% endif %}
+            </div>
+
+            <!-- Notes -->
+            {% if app.notes %}
+            <div>
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Notes</h4>
+                <p class="text-sm text-slate-600 italic border-l-2 border-indigo-200 pl-3">{{ app.notes }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Description -->
+            {% if app.description %}
+            <div>
+                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">Job Description</h4>
+                <div class="text-sm text-slate-600 leading-relaxed max-h-64 overflow-y-auto pr-2
+                            prose prose-sm prose-slate max-w-none
+                            [&_ul]:list-disc [&_ul]:ml-4 [&_ul]:my-1
+                            [&_ol]:list-decimal [&_ol]:ml-4 [&_ol]:my-1
+                            [&_li]:my-0.5
+                            [&_p]:my-2
+                            [&_strong]:font-semibold [&_strong]:text-slate-700
+                            [&_h3]:text-sm [&_h3]:font-bold [&_h3]:text-slate-700 [&_h3]:mt-3 [&_h3]:mb-1
+                            [&_h4]:text-sm [&_h4]:font-semibold [&_h4]:text-slate-700 [&_h4]:mt-2 [&_h4]:mb-1">
+                    {{ app.description | safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer with metadata -->
+            <div class="flex items-center justify-between pt-2 border-t border-slate-200">
+                <div class="flex items-center gap-3 text-xs text-slate-400">
+                    <span>Applied {{ app.date_applied }}</span>
+                    <span>&bull;</span>
+                    <span>Added {{ app.created_at[:10] }}</span>
+                    {% if app.days_since is defined %}
+                    <span>&bull;</span>
+                    <span>{{ app.days_since }} day{{ 's' if app.days_since != 1 else '' }} ago</span>
+                    {% endif %}
+                </div>
+                <a href="{{ app.linkedin_url }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                    View on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

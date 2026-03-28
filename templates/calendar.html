@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Dashboard -->
+<section id="dashboard" class="mb-8">
+    {% include "partials/dashboard.html" %}
+</section>
+
+<!-- Calendar -->
+<section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
+    <div id="calendar-grid">
+        {% include "partials/calendar_grid.html" %}
+    </div>
+</section>
+
+<!-- Selected day's applications -->
+<div id="calendar-apps">
+    <div class="text-center py-10 text-slate-400">
+        <svg class="w-10 h-10 mx-auto mb-2 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                  d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/>
+        </svg>
+        <p class="text-sm">Click a day on the calendar to see its applications</p>
+    </div>
+</div>
+
+{% endblock %}

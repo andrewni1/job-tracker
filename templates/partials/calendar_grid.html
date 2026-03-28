@@ -1,0 +1,63 @@
+<!-- Calendar Grid -->
+<div class="flex items-center justify-between mb-5">
+    <button
+        hx-get="/calendar?year={{ cal.prev_year }}&month={{ cal.prev_month }}"
+        hx-target="#calendar-grid"
+        hx-swap="innerHTML"
+        class="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800"
+        aria-label="Previous month"
+    >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+    </button>
+    <h2 class="text-xl font-bold text-slate-800">{{ cal.month_name }} {{ cal.year }}</h2>
+    <button
+        hx-get="/calendar?year={{ cal.next_year }}&month={{ cal.next_month }}"
+        hx-target="#calendar-grid"
+        hx-swap="innerHTML"
+        class="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-500 hover:text-slate-800"
+        aria-label="Next month"
+    >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+        </svg>
+    </button>
+</div>
+
+<!-- Day headers -->
+<div class="grid grid-cols-7 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+    <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div>
+    <div class="text-slate-300">Sat</div><div class="text-slate-300">Sun</div>
+</div>
+
+<!-- Weeks -->
+{% for week in cal.weeks %}
+<div class="grid grid-cols-7 border-t border-slate-100">
+    {% for day in week %}
+    {% if day %}
+    <button
+        hx-get="/calendar/day?d={{ day.date }}"
+        hx-target="#calendar-apps"
+        hx-swap="innerHTML"
+        class="relative p-3 text-left hover:bg-indigo-50 transition-colors border-r border-slate-100 last:border-r-0 min-h-[72px] group
+               {% if day.is_today %}bg-indigo-50 ring-2 ring-inset ring-indigo-300{% endif %}"
+        aria-label="{{ day.date }}: {{ day.count }} application{{ 's' if day.count != 1 else '' }}"
+    >
+        <span class="text-sm font-medium {% if day.is_today %}text-indigo-600{% else %}text-slate-700 group-hover:text-indigo-600{% endif %}">{{ day.day }}</span>
+        {% if day.count > 0 %}
+        <span class="absolute bottom-2 right-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full text-xs font-bold
+                     {% if day.count >= 5 %}bg-indigo-600 text-white
+                     {% elif day.count >= 3 %}bg-indigo-500 text-white
+                     {% else %}bg-indigo-100 text-indigo-700
+                     {% endif %}">
+            {{ day.count }}
+        </span>
+        {% endif %}
+    </button>
+    {% else %}
+    <div class="p-3 border-r border-slate-100 last:border-r-0 min-h-[72px] bg-slate-50/50"></div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% endfor %}
