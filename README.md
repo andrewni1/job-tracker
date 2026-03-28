@@ -57,6 +57,12 @@ No accounts. No cloud. No subscriptions. Just a clean tool that runs on your mac
 - **Python 3.11+**
 - **uv** (recommended) or pip
 
+### Install uv (if not already installed)
+
+```bash
+pip install uv
+```
+
 ### Setup
 
 ```bash
@@ -65,13 +71,22 @@ cd job-tracker
 
 # Create a virtual environment
 uv venv
-source .venv/bin/activate  # macOS/Linux
-# .venv\Scripts\activate   # Windows
+```
 
-# Install dependencies
-uv pip install fastapi uvicorn aiosqlite httpx beautifulsoup4 jinja2 python-multipart \
-  --index-url https://pypi.ci.artifacts.walmart.com/artifactory/api/pypi/external-pypi/simple \
-  --allow-insecure-host pypi.ci.artifacts.walmart.com
+Activate the venv:
+
+```bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows (PowerShell)
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```bash
+uv pip install fastapi uvicorn aiosqlite httpx beautifulsoup4 jinja2 python-multipart
 ```
 
 ### Run
