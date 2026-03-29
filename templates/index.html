@@ -9,9 +9,17 @@
 <!-- Add New Application -->
 <section class="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-8">
     <h2 class="text-lg font-semibold mb-4 text-slate-700">Add New Application</h2>
-    <p class="text-sm text-slate-500 mb-4">
-        <a href="https://www.linkedin.com/jobs/search-results/?currentJobId=4268919673&keywords=United%20states&origin=JOB_SEARCH_PAGE_JOB_FILTER&referralSearchId=Ppc9A%2FGeIQBqnXQoiMkYbA%3D%3D&geoId=103644278&distance=0.0&f_TPR=r86400&f_SAL=f_SA_id_226001%3A272015" target="_blank" rel="noreferrer" class="text-indigo-600 hover:text-indigo-800">LinkedIn Job Listings</a>
-    </p>
+    <div class="space-y-3 mb-4 text-sm text-slate-500">
+        <p>
+            <a href="https://www.linkedin.com/jobs/search-results/?currentJobId=4268919673&keywords=United%20states&origin=JOB_SEARCH_PAGE_JOB_FILTER&referralSearchId=Ppc9A%2FGeIQBqnXQoiMkYbA%3D%3D&geoId=103644278&distance=0.0&f_TPR=r86400&f_SAL=f_SA_id_226001%3A272015" target="_blank" rel="noreferrer" class="text-indigo-600 hover:text-indigo-800">LinkedIn Job Listings</a>
+        </p>
+        <div class="grid gap-2 sm:grid-cols-3">
+            <button type="button" data-copy-text="https://andrewni1.github.io/" class="text-left w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:border-indigo-500 hover:text-indigo-700 transition">Website</button>
+            <button type="button" data-copy-text="https://github.com/andrewni1" class="text-left w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:border-indigo-500 hover:text-indigo-700 transition">GitHub</button>
+            <button type="button" data-copy-text="https://www.linkedin.com/in/andrewni1/" class="text-left w-full rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-700 hover:border-indigo-500 hover:text-indigo-700 transition">LinkedIn</button>
+        </div>
+        <p id="copy-feedback" class="text-xs text-slate-400 hidden"></p>
+    </div>
     <form
         hx-post="/applications"
         hx-target="#app-list"
@@ -154,5 +162,48 @@
 <div id="app-list">
     {% include "partials/app_list.html" %}
 </div>
+
+<script>
+    function copyTextToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        var textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.left = '-9999px';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        return new Promise(function(resolve, reject) {
+            try {
+                var successful = document.execCommand('copy');
+                document.body.removeChild(textarea);
+                successful ? resolve() : reject();
+            } catch (err) {
+                document.body.removeChild(textarea);
+                reject(err);
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        var feedback = document.getElementById('copy-feedback');
+        document.querySelectorAll('[data-copy-text]').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var text = this.getAttribute('data-copy-text');
+                copyTextToClipboard(text).then(function () {
+                    if (feedback) {
+                        feedback.textContent = 'Copied URL to clipboard';
+                        feedback.classList.remove('hidden');
+                        setTimeout(function () {
+                            feedback.classList.add('hidden');
+                        }, 2000);
+                    }
+                });
+            });
+        });
+    });
+</script>
 
 {% endblock %}
